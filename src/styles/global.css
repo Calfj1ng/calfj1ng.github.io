@@ -1,13 +1,13 @@
 :root {
-  --text: #e8e4f0;
-  --text-muted: #9a94b0;
-  --bg: #0f0f1a;
-  --border: rgba(140, 120, 255, 0.12);
-  --accent: #a78bfa;
-  --accent-light: rgba(167, 139, 250, 0.12);
-  --surface: rgba(20, 18, 35, 0.75);
-  --surface-solid: #141223;
-  --glow: rgba(140, 120, 255, 0.08);
+  --text: #e0f0ee;
+  --text-muted: #7fa8a0;
+  --bg: #0b0b1a;
+  --border: rgba(0, 210, 180, 0.1);
+  --accent: #00d4b4;
+  --accent-light: rgba(0, 212, 180, 0.1);
+  --surface: rgba(10, 18, 30, 0.7);
+  --surface-solid: #0a121e;
+  --glow: rgba(0, 210, 180, 0.06);
 }
 
 *,
@@ -18,7 +18,7 @@
 
 html {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
-  background: #0f0f1a;
+  background: #0b0b1a;
   scroll-behavior: smooth;
 }
 
@@ -64,11 +64,11 @@ code {
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.9em;
-  color: #c4b5fd;
+  color: #5eead4;
 }
 
 pre {
-  background: rgba(10, 8, 20, 0.85);
+  background: rgba(8, 14, 25, 0.85);
   color: #cdd6f4;
   padding: 1.25rem;
   border-radius: 8px;
@@ -121,6 +121,6 @@ th {
 }
 
 ::selection {
-  background: rgba(167, 139, 250, 0.3);
+  background: rgba(0, 212, 180, 0.3);
   color: #fff;
 }
