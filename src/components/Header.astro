@@ -27,6 +27,12 @@ const navItems = [
   header {
     padding: 0 1rem;
     border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
   }
 
   .nav-inner {
@@ -62,6 +68,6 @@ const navItems = [
 
   .nav-links a:hover,
   .nav-links a.active {
-    color: var(--text);
+    color: var(--accent);
   }
 </style>
