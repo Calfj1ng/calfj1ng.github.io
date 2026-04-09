@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="About | My Blog" description="关于我">
+  <section class="about">
+    <h1>关于我</h1>
+    <div class="about-content">
+      <p>
+        欢迎来到我的个人博客！这里是我在互联网上的一个小角落。
+      </p>
+      <p>
+        我喜欢探索新技术、阅读和思考。这个博客是我记录学习过程、分享想法的地方。
+      </p>
+
+      <h2>关于这个博客</h2>
+      <p>
+        这个博客使用 <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> 构建，
+        部署在 <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a> 上。
+        使用 Markdown 编写文章，简洁高效。
+      </p>
+
+      <h2>联系方式</h2>
+      <ul>
+        <li>GitHub: <a href="#">你的 GitHub</a></li>
+        <li>Email: your-email@example.com</li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+
+  .about h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .about-content {
+    line-height: 1.8;
+  }
+
+  .about-content p {
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .about-content h2 {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+</style>

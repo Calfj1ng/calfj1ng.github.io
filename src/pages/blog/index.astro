@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout title="Blog | My Blog" description="所有文章列表">
+  <section class="blog-list">
+    <h1>Blog</h1>
+    <p class="subtitle">记录想法，分享知识</p>
+
+    <div class="posts">
+      {posts.map((post) => (
+        <article class="post-card">
+          <a href={`/blog/${post.id}/`}>
+            <h2>{post.data.title}</h2>
+          </a>
+          <p class="description">{post.data.description}</p>
+          <div class="meta">
+            <FormattedDate date={post.data.pubDate} />
+            {post.data.tags && (
+              <div class="tags">
+                {post.data.tags.map((tag: string) => (
+                  <span class="tag">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .blog-list h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .post-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .post-card h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .post-card a {
+    color: var(--text);
+  }
+
+  .post-card a:hover {
+    text-decoration: none;
+    color: var(--accent);
+  }
+
+  .description {
+    color: var(--text-muted);
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 0.15em 0.6em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+  }
+</style>

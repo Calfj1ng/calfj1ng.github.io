@@ -1,0 +1,136 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const recentPosts = posts.slice(0, 5);
+---
+
+<BaseLayout title="My Blog" description="我的个人博客，记录想法，分享知识。">
+  <section class="hero">
+    <h1>你好，欢迎 👋</h1>
+    <p class="hero-desc">
+      这是我的个人博客，在这里记录想法、分享知识和生活中的点滴。
+    </p>
+    <a href="/blog/" class="cta-button">阅读文章 →</a>
+  </section>
+
+  {recentPosts.length > 0 && (
+    <section class="recent">
+      <h2>最新文章</h2>
+      <div class="post-list">
+        {recentPosts.map((post) => (
+          <a href={`/blog/${post.id}/`} class="post-item">
+            <span class="post-title">{post.data.title}</span>
+            <FormattedDate date={post.data.pubDate} />
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 4rem 0 3rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--accent), #e040fb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    max-width: 36rem;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  .cta-button {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff !important;
+    padding: 0.75rem 2rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .cta-button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+
+  .recent {
+    margin-top: 1rem;
+  }
+
+  .recent h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .post-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .post-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+    text-decoration: none;
+  }
+
+  .post-title {
+    font-weight: 500;
+  }
+
+  .post-item time {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    margin-left: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 {
+      font-size: 2rem;
+    }
+
+    .post-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+    }
+
+    .post-item time {
+      margin-left: 0;
+    }
+  }
+</style>
