@@ -1,142 +1,272 @@
 ---
 ---
 
-<div class="aurora-bg">
-  <div class="aurora aurora-1"></div>
-  <div class="aurora aurora-2"></div>
-  <div class="aurora aurora-3"></div>
-  <div class="aurora aurora-4"></div>
-</div>
+<canvas id="cybergrid-bg"></canvas>
 
 <style>
-  .aurora-bg {
+  #cybergrid-bg {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     z-index: -1;
-    overflow: hidden;
-    background: #0b0b1a;
-  }
-
-  .aurora {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    border-radius: 40%;
-    filter: blur(80px);
-    opacity: 0.5;
-    mix-blend-mode: screen;
-  }
-
-  .aurora-1 {
-    background: linear-gradient(
-      135deg,
-      rgba(0, 210, 180, 0.4) 0%,
-      rgba(0, 150, 200, 0.2) 40%,
-      transparent 70%
-    );
-    animation: drift1 18s ease-in-out infinite;
-  }
-
-  .aurora-2 {
-    background: linear-gradient(
-      225deg,
-      rgba(120, 80, 255, 0.35) 0%,
-      rgba(60, 40, 180, 0.15) 50%,
-      transparent 80%
-    );
-    animation: drift2 22s ease-in-out infinite;
-  }
-
-  .aurora-3 {
-    background: linear-gradient(
-      315deg,
-      rgba(0, 200, 255, 0.3) 0%,
-      rgba(100, 50, 200, 0.15) 45%,
-      transparent 75%
-    );
-    animation: drift3 25s ease-in-out infinite;
-  }
-
-  .aurora-4 {
-    background: linear-gradient(
-      45deg,
-      rgba(50, 220, 130, 0.25) 0%,
-      rgba(0, 180, 200, 0.1) 50%,
-      transparent 70%
-    );
-    animation: drift4 20s ease-in-out infinite;
-  }
-
-  @keyframes drift1 {
-    0%, 100% { transform: translate(10%, 10%) rotate(0deg) scale(1); }
-    25% { transform: translate(20%, 5%) rotate(5deg) scale(1.05); }
-    50% { transform: translate(15%, 15%) rotate(-3deg) scale(0.98); }
-    75% { transform: translate(5%, 20%) rotate(8deg) scale(1.03); }
-  }
-
-  @keyframes drift2 {
-    0%, 100% { transform: translate(15%, 5%) rotate(0deg) scale(1.02); }
-    25% { transform: translate(5%, 15%) rotate(-6deg) scale(0.97); }
-    50% { transform: translate(20%, 10%) rotate(4deg) scale(1.05); }
-    75% { transform: translate(10%, 20%) rotate(-2deg) scale(1); }
-  }
-
-  @keyframes drift3 {
-    0%, 100% { transform: translate(5%, 20%) rotate(2deg) scale(0.98); }
-    33% { transform: translate(18%, 8%) rotate(-5deg) scale(1.06); }
-    66% { transform: translate(8%, 15%) rotate(7deg) scale(0.95); }
-  }
-
-  @keyframes drift4 {
-    0%, 100% { transform: translate(20%, 15%) rotate(-3deg) scale(1.01); }
-    50% { transform: translate(8%, 5%) rotate(6deg) scale(0.96); }
-  }
-
-  /* 星星点缀层 */
-  .aurora-bg::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
-      radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1.5px 1.5px at 40% 15%, rgba(255,255,255,0.5), transparent),
-      radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.35), transparent),
-      radial-gradient(1.5px 1.5px at 85% 60%, rgba(255,255,255,0.4), transparent),
-      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.25), transparent),
-      radial-gradient(1px 1px at 50% 45%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1.5px 1.5px at 90% 10%, rgba(255,255,255,0.45), transparent),
-      radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1px 1px at 65% 5%, rgba(255,255,255,0.35), transparent),
-      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1.5px 1.5px at 78% 82%, rgba(255,255,255,0.4), transparent),
-      radial-gradient(1px 1px at 45% 30%, rgba(255,255,255,0.28), transparent),
-      radial-gradient(1px 1px at 92% 45%, rgba(255,255,255,0.32), transparent),
-      radial-gradient(1px 1px at 20% 10%, rgba(255,255,255,0.3), transparent),
-      radial-gradient(1.5px 1.5px at 60% 92%, rgba(255,255,255,0.38), transparent),
-      radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.26), transparent),
-      radial-gradient(1px 1px at 80% 25%, rgba(255,255,255,0.34), transparent),
-      radial-gradient(1px 1px at 8% 72%, rgba(255,255,255,0.3), transparent);
-    animation: twinkle 8s ease-in-out infinite alternate;
-    z-index: 1;
     pointer-events: none;
   }
-
-  @keyframes twinkle {
-    0% { opacity: 0.6; }
-    100% { opacity: 1; }
+  html {
+    background: #0a0014;
+  }
+  body {
+    background: transparent !important;
   }
 </style>
 
 <script>
-  // 无需 JS — 纯 CSS 动画，零性能开销
+  function initCyberGrid() {
+    if (window.__cyberGridInit) return;
+    window.__cyberGridInit = true;
+
+    const canvas = document.getElementById('cybergrid-bg') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d')!;
+    let w = 0, h = 0;
+    let animId = 0;
+    let time = 0;
+
+    // 霓虹色
+    const NEON_CYAN = '#00f0ff';
+    const NEON_PINK = '#ff00ff';
+    const NEON_PURPLE = '#a855f7';
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+
+    // 透视网格绘制
+    function drawGrid() {
+      // 底部地平线
+      const horizon = h * 0.45;
+
+      // --- 水平线 (Y轴) ---
+      const numHLines = 30;
+      for (let i = 0; i < numHLines; i++) {
+        // 越远越密
+        const t = i / numHLines;
+        const perspT = Math.pow(t, 1.8);
+        const y = horizon + (h - horizon) * perspT;
+
+        // 滚动偏移
+        const scrollOffset = ((time * 40) % ((h - horizon) / numHLines));
+        const yFinal = y + scrollOffset * perspT;
+
+        if (yFinal < horizon || yFinal > h) continue;
+
+        // 越远越暗
+        const alpha = 0.08 + perspT * 0.25;
+
+        ctx.beginPath();
+        ctx.moveTo(0, yFinal);
+        ctx.lineTo(w, yFinal);
+        ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // --- 竖线 (X轴，透视收缩) ---
+      const numVLines = 24;
+      const vanishX = w / 2;
+      for (let i = -numVLines / 2; i <= numVLines / 2; i++) {
+        const bottomX = vanishX + i * (w / numVLines) * 1.2;
+        const topX = vanishX + i * 3;
+
+        const distFromCenter = Math.abs(i) / (numVLines / 2);
+        const alpha = 0.15 + (1 - distFromCenter) * 0.2;
+
+        ctx.beginPath();
+        ctx.moveTo(topX, horizon);
+        ctx.lineTo(bottomX, h);
+        ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // --- 地平线发光 ---
+      const glowGrad = ctx.createLinearGradient(0, horizon - 30, 0, horizon + 30);
+      glowGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+      glowGrad.addColorStop(0.5, 'rgba(0, 240, 255, 0.08)');
+      glowGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, horizon - 30, w, 60);
+
+      // --- 地平线亮线 ---
+      ctx.beginPath();
+      ctx.moveTo(0, horizon);
+      ctx.lineTo(w, horizon);
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // 星空 / 粒子
+    interface Particle {
+      x: number;
+      y: number;
+      r: number;
+      alpha: number;
+      speed: number;
+      color: string;
+    }
+
+    const particles: Particle[] = [];
+    const PARTICLE_COUNT = 80;
+
+    function createParticle(): Particle {
+      const colors = [NEON_CYAN, NEON_PINK, NEON_PURPLE, '#ffffff'];
+      return {
+        x: Math.random() * w,
+        y: Math.random() * h * 0.5, // 只在天空区域
+        r: Math.random() * 1.5 + 0.3,
+        alpha: Math.random() * 0.6 + 0.2,
+        speed: Math.random() * 0.01 + 0.003,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      };
+    }
+
+    function initParticles() {
+      particles.length = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        // 闪烁
+        const flicker = Math.sin(time * 2 * Math.PI * p.speed * 60 + p.x) * 0.3;
+        const a = Math.max(0, Math.min(1, p.alpha + flicker));
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color.replace(')', `, ${a})`).replace('rgb', 'rgba').replace('#', '');
+
+        // 用简单方式设置 alpha
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // 扫描线效果
+    function drawScanlines() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      for (let y = 0; y < h; y += 3) {
+        ctx.fillRect(0, y, w, 1);
+      }
+    }
+
+    // 顶部天空渐变
+    function drawSky() {
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.5);
+      skyGrad.addColorStop(0, '#0a0014');
+      skyGrad.addColorStop(0.6, '#0d0020');
+      skyGrad.addColorStop(1, '#120030');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h * 0.5);
+    }
+
+    // 底部地面渐变
+    function drawGround() {
+      const groundGrad = ctx.createLinearGradient(0, h * 0.45, 0, h);
+      groundGrad.addColorStop(0, '#0a0014');
+      groundGrad.addColorStop(1, '#050008');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, h * 0.45, w, h * 0.55);
+    }
+
+    // 远处城市剪影
+    function drawCitySilhouette() {
+      const horizon = h * 0.45;
+      ctx.fillStyle = '#0a0014';
+
+      // 简单的建筑方块
+      const buildings = [
+        { x: 0.05, w: 0.03, h: 0.06 },
+        { x: 0.09, w: 0.02, h: 0.1 },
+        { x: 0.12, w: 0.04, h: 0.04 },
+        { x: 0.18, w: 0.015, h: 0.14 },
+        { x: 0.21, w: 0.03, h: 0.07 },
+        { x: 0.26, w: 0.05, h: 0.03 },
+        { x: 0.33, w: 0.02, h: 0.12 },
+        { x: 0.36, w: 0.04, h: 0.05 },
+        { x: 0.42, w: 0.01, h: 0.18 },
+        { x: 0.44, w: 0.03, h: 0.08 },
+        { x: 0.49, w: 0.04, h: 0.06 },
+        { x: 0.55, w: 0.02, h: 0.15 },
+        { x: 0.58, w: 0.03, h: 0.04 },
+        { x: 0.63, w: 0.015, h: 0.1 },
+        { x: 0.67, w: 0.05, h: 0.03 },
+        { x: 0.74, w: 0.02, h: 0.13 },
+        { x: 0.78, w: 0.04, h: 0.05 },
+        { x: 0.84, w: 0.015, h: 0.09 },
+        { x: 0.88, w: 0.03, h: 0.07 },
+        { x: 0.93, w: 0.04, h: 0.04 },
+      ];
+
+      for (const b of buildings) {
+        const bx = b.x * w;
+        const bw = b.w * w;
+        const bh = b.h * h;
+        ctx.fillRect(bx, horizon - bh, bw, bh);
+
+        // 随机窗户灯光
+        const windowColor = Math.random() > 0.5 ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 0, 255, 0.2)';
+        if (Math.random() > 0.4) {
+          ctx.fillStyle = windowColor;
+          const wy = horizon - bh + bh * 0.3;
+          ctx.fillRect(bx + bw * 0.2, wy, bw * 0.2, bh * 0.15);
+          if (bh > h * 0.08) {
+            ctx.fillRect(bx + bw * 0.6, wy + bh * 0.3, bw * 0.2, bh * 0.15);
+          }
+          ctx.fillStyle = '#0a0014';
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+
+      drawSky();
+      drawGround();
+      drawCitySilhouette();
+      drawGrid();
+      drawParticles();
+      drawScanlines();
+
+      time += 0.016; // ~60fps
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    resize();
+    initParticles();
+    draw();
+
+    window.addEventListener('resize', () => {
+      resize();
+      initParticles();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+      } else {
+        draw();
+      }
+    });
+  }
+
+  initCyberGrid();
 </script>
