@@ -1,10 +1,12 @@
 ---
 ---
 
-<canvas id="sunset-bg"></canvas>
+<div class="snowfall-container" id="snowfall-bg">
+  <div class="night-sky"></div>
+</div>
 
 <style>
-  #sunset-bg {
+  .snowfall-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,197 +14,162 @@
     height: 100%;
     z-index: -1;
     pointer-events: none;
+    overflow: hidden;
   }
-  html {
-    background: #1a0a2e;
+
+  .night-sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      #0a0e1a 0%,
+      #0f1b33 20%,
+      #162040 40%,
+      #1a2845 60%,
+      #1e3050 80%,
+      #243855 100%
+    );
   }
-  body {
-    background: transparent !important;
+
+  .snowflake {
+    position: absolute;
+    top: -20px;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .snowflake-dot {
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(200,215,240,0.6) 100%);
+    box-shadow: 0 0 4px rgba(200, 220, 255, 0.3);
+  }
+
+  .snowflake-crystal {
+    position: relative;
+  }
+
+  .snowflake-crystal::before {
+    content: '❄';
+    color: rgba(220, 235, 255, 0.7);
+    text-shadow: 0 0 6px rgba(180, 210, 255, 0.4);
+  }
+
+  @keyframes snowfall {
+    0% {
+      transform: translateY(-20px) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    5% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(calc(100vh + 40px)) translateX(var(--drift)) rotate(var(--spin));
+      opacity: 0;
+    }
+  }
+
+  /* 小星星 */
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(200, 220, 255, 0.5);
+    animation: twinkle var(--twinkle-duration) ease-in-out infinite alternate;
+  }
+
+  @keyframes twinkle {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    100% { opacity: 0.8; transform: scale(1.2); }
+  }
+
+  /* 底部积雪光晕 */
+  .ground-glow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15%;
+    background: linear-gradient(
+      to top,
+      rgba(180, 200, 230, 0.08) 0%,
+      rgba(140, 170, 210, 0.03) 40%,
+      transparent 100%
+    );
+    pointer-events: none;
   }
 </style>
 
 <script>
-  function initSunsetBubbles() {
-    if (window.__sunsetInit) return;
-    window.__sunsetInit = true;
+  function initSnowfall() {
+    if ((window as any).__snowfallInit) return;
+    (window as any).__snowfallInit = true;
 
-    const canvas = document.getElementById('sunset-bg') as HTMLCanvasElement;
-    if (!canvas) return;
+    const container = document.getElementById('snowfall-bg');
+    if (!container) return;
 
-    const ctx = canvas.getContext('2d')!;
-    let w = 0, h = 0;
-    let animId = 0;
-
-    interface Bubble {
-      x: number;
-      y: number;
-      r: number;
-      speed: number;
-      wobbleAmp: number;
-      wobbleSpeed: number;
-      wobbleOffset: number;
-      hue: number;
-      saturation: number;
-      lightness: number;
-      alpha: number;
-      glow: number;
+    // --- 星星 ---
+    const starCount = 60;
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = Math.random() * 2 + 0.5;
+      star.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 50}%;
+        --twinkle-duration: ${Math.random() * 3 + 2}s;
+        animation-delay: ${Math.random() * 5}s;
+      `;
+      container.appendChild(star);
     }
 
-    const bubbles: Bubble[] = [];
-    const MAX_BUBBLES = 50;
+    // --- 底部光晕 ---
+    const glow = document.createElement('div');
+    glow.className = 'ground-glow';
+    container.appendChild(glow);
 
-    function resize() {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    }
+    // --- 雪花 ---
+    const snowflakeCount = 120;
+    const DOT_RATIO = 0.8;
 
-    function createBubble(): Bubble {
-      // 夕阳色调：橙、粉、紫、金、珊瑚
-      const palettes = [
-        { hue: 15, saturation: 90, lightness: 60 },   // 橙色
-        { hue: 340, saturation: 80, lightness: 65 },   // 粉红
-        { hue: 270, saturation: 60, lightness: 55 },   // 紫色
-        { hue: 40, saturation: 95, lightness: 65 },    // 金色
-        { hue: 5, saturation: 85, lightness: 60 },     // 珊瑚
-        { hue: 320, saturation: 70, lightness: 60 },   // 玫红
-        { hue: 25, saturation: 100, lightness: 55 },   // 深橙
-        { hue: 290, saturation: 50, lightness: 50 },   // 淡紫
-      ];
-      const pal = palettes[Math.floor(Math.random() * palettes.length)];
+    for (let i = 0; i < snowflakeCount; i++) {
+      const isDot = Math.random() < DOT_RATIO;
+      const el = document.createElement('div');
+      el.className = 'snowflake';
 
-      return {
-        x: Math.random() * w,
-        y: h + Math.random() * 100,
-        r: Math.random() * 30 + 8,
-        speed: Math.random() * 0.8 + 0.3,
-        wobbleAmp: Math.random() * 30 + 10,
-        wobbleSpeed: Math.random() * 0.02 + 0.005,
-        wobbleOffset: Math.random() * Math.PI * 2,
-        hue: pal.hue + (Math.random() - 0.5) * 20,
-        saturation: pal.saturation,
-        lightness: pal.lightness,
-        alpha: Math.random() * 0.3 + 0.15,
-        glow: Math.random() * 20 + 10,
-      };
-    }
-
-    function init() {
-      resize();
-      bubbles.length = 0;
-      for (let i = 0; i < MAX_BUBBLES; i++) {
-        const b = createBubble();
-        b.y = Math.random() * h; // 初始分散
-        bubbles.push(b);
+      if (isDot) {
+        const size = Math.random() * 8 + 3;
+        const inner = document.createElement('div');
+        inner.className = 'snowflake-dot';
+        inner.style.cssText = `width:${size}px;height:${size}px;`;
+        el.appendChild(inner);
+      } else {
+        const size = Math.random() * 28 + 14;
+        const inner = document.createElement('div');
+        inner.className = 'snowflake-crystal';
+        inner.style.cssText = `font-size:${size}px;`;
+        el.appendChild(inner);
       }
+
+      const left = Math.random() * 100;
+      const duration = Math.random() * 25 + 15;
+      const delay = Math.random() * 35;
+      const drift = (Math.random() * 80 + 20) * (Math.random() < 0.5 ? 1 : -1);
+      const spin = Math.random() * 720 - 360;
+
+      el.style.cssText = `
+        left: ${left}%;
+        --drift: ${drift}px;
+        --spin: ${spin}deg;
+        animation: snowfall ${duration}s linear ${delay}s infinite;
+      `;
+
+      container.appendChild(el);
     }
-
-    function drawBackground() {
-      // 夕阳渐变：底部深紫 → 中间橙红 → 顶部深蓝
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#0a0520');
-      grad.addColorStop(0.25, '#1a0a3e');
-      grad.addColorStop(0.45, '#4a1040');
-      grad.addColorStop(0.6, '#8b1a3a');
-      grad.addColorStop(0.75, '#c44a20');
-      grad.addColorStop(0.88, '#e8781a');
-      grad.addColorStop(0.95, '#f4a030');
-      grad.addColorStop(1, '#f8c848');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-
-      // 地平线发光
-      const horizonY = h * 0.72;
-      const glowGrad = ctx.createRadialGradient(w / 2, horizonY, 0, w / 2, horizonY, w * 0.6);
-      glowGrad.addColorStop(0, 'rgba(255, 160, 50, 0.25)');
-      glowGrad.addColorStop(0.5, 'rgba(255, 100, 50, 0.08)');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(0, 0, w, h);
-    }
-
-    function drawBubbles(time: number) {
-      for (const b of bubbles) {
-        // 上浮
-        b.y -= b.speed;
-
-        // 左右摇摆
-        const wobbleX = Math.sin(time * b.wobbleSpeed * 60 + b.wobbleOffset) * b.wobbleAmp;
-
-        // 超出顶部则重置
-        if (b.y < -b.r * 2) {
-          b.y = h + b.r;
-          b.x = Math.random() * w;
-        }
-
-        const drawX = b.x + wobbleX;
-
-        // 越高越透明
-        const heightFade = 1 - (1 - b.y / h) * 0.6;
-        const a = b.alpha * Math.max(0, heightFade);
-
-        // 发光效果
-        const glowGrad = ctx.createRadialGradient(drawX, b.y, 0, drawX, b.y, b.r + b.glow);
-        glowGrad.addColorStop(0, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness}%, ${a})`);
-        glowGrad.addColorStop(0.5, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness}%, ${a * 0.4})`);
-        glowGrad.addColorStop(1, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness}%, 0)`);
-        ctx.fillStyle = glowGrad;
-        ctx.beginPath();
-        ctx.arc(drawX, b.y, b.r + b.glow, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 气泡主体（半透明圆）
-        const bodyGrad = ctx.createRadialGradient(
-          drawX - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1,
-          drawX, b.y, b.r
-        );
-        bodyGrad.addColorStop(0, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness + 20}%, ${a * 0.6})`);
-        bodyGrad.addColorStop(0.7, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness}%, ${a * 0.2})`);
-        bodyGrad.addColorStop(1, `hsla(${b.hue}, ${b.saturation}%, ${b.lightness}%, ${a * 0.05})`);
-        ctx.fillStyle = bodyGrad;
-        ctx.beginPath();
-        ctx.arc(drawX, b.y, b.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 高光
-        ctx.fillStyle = `rgba(255, 255, 255, ${a * 0.4})`;
-        ctx.beginPath();
-        ctx.arc(drawX - b.r * 0.25, b.y - b.r * 0.25, b.r * 0.15, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // 小星星点缀在上方天空
-    function drawStars() {
-      const colors = ['rgba(255,200,150,0.4)', 'rgba(200,180,255,0.3)', 'rgba(255,255,200,0.35)'];
-      for (let i = 0; i < 40; i++) {
-        const sx = ((i * 137.508) % w);
-        const sy = ((i * 97.3) % (h * 0.4));
-        ctx.fillStyle = colors[i % 3];
-        ctx.beginPath();
-        ctx.arc(sx, sy, (i % 3 + 1) * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    let time = 0;
-    function draw() {
-      ctx.clearRect(0, 0, w, h);
-      drawBackground();
-      drawStars();
-      drawBubbles(time);
-      time += 0.016;
-      animId = requestAnimationFrame(draw);
-    }
-
-    init();
-    draw();
-
-    window.addEventListener('resize', init);
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) cancelAnimationFrame(animId);
-      else draw();
-    });
   }
 
-  initSunsetBubbles();
+  initSnowfall();
 </script>
