@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+type Friend = {
+  name: string;
+  description: string;
+  href: string;
+  color: string;
+};
+
+const friends: Friend[] = [
+  {
+    name: 'Alice Chen',
+    description: 'Frontend engineer, loves design systems',
+    href: 'https://example.com/alice',
+    color: '#6e8bff',
+  },
+  {
+    name: 'Tech Harbor',
+    description: 'Cybersecurity & DevOps',
+    href: 'https://example.org',
+    color: '#ff7f50',
+  },
+  {
+    name: 'CodePal Studio',
+    description: 'Open-source contributor',
+    href: 'https://example.dev',
+    color: '#8dd3c7',
+  },
+  {
+    name: 'Blog Circuits',
+    description: 'Tech blog network',
+    href: 'https://blogcircuits.example',
+    color: '#ffd700',
+  },
+];
+---
+
+<BaseLayout title="友链 | My Blog" description="友情链接">
+  <section class="friends-list">
+    <h1>友链</h1>
+    <p class="subtitle">以下是本站推荐的友情链接，点击访问</p>
+
+    <div class="grid">
+      {friends.map((f) => (
+        <a class="friend-card" href={f.href} target="_blank" rel="noopener">
+          <div class="avatar" style={`background: ${f.color};`}>
+            {f.name.charAt(0)}
+          </div>
+          <div class="info">
+            <div class="name">{f.name}</div>
+            <div class="description">{f.description}</div>
+          </div>
+          <span class="visit">Visit</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .friends-list h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .friend-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700;
+  }
+  .info { flex: 1; }
+  .name { font-weight: 600; }
+  .description { font-size: 0.9rem; color: var(--text-muted); }
+  .visit { color: var(--text-muted); }
+</style>

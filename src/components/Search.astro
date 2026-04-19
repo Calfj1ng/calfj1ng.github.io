@@ -1,0 +1,147 @@
+---
+---
+
+<!-- Client-side search overlay component -->
+<div id="search-overlay" class="search-overlay" aria-hidden="true" hidden>
+  <div class="search-card" role="dialog" aria-label="Site search">
+    <div class="search-header">
+      <input id="search-input" type="search" placeholder="Search posts..." aria-label="Search input" />
+      <button id="search-close" class="close-btn" aria-label="Close search">✖</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+  <style>
+    :root {
+      --overlay: rgba(2, 8, 20, 0.92);
+      --card: rgba(10, 18, 35, 0.95);
+    }
+    .search-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      display: grid;
+      place-items: center;
+      z-index: 9999;
+    }
+    .search-card {
+      width: min(720px, 92vw);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1rem 1rem 1rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,.25);
+      color: var(--text);
+    }
+    .search-header { display: flex; gap: 0.5rem; align-items: center; }
+    #search-input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    .close-btn {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.2rem;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+    }
+    .search-results { margin-top: 0.75rem; max-height: 60vh; overflow: auto; }
+    .result-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .result-item a { color: var(--text); text-decoration: none; }
+    .result-item a:hover { color: var(--accent); }
+  </style>
+</div>
+
+<script>
+  // Simple client-side search overlay logic
+  (function(){
+    const overlay = document.getElementById('search-overlay');
+    // Button in Header to open (placed in Header.astro as #search-btn)
+    const openBtn = document.getElementById('search-btn');
+    const input = document.getElementById('search-input');
+    const results = document.getElementById('search-results');
+    const closeBtn = document.getElementById('search-close');
+    let index = [];
+
+    const render = (items) => {
+      results.innerHTML = '';
+      if (!items || items.length === 0) {
+        results.innerHTML = '<div class="result-item">No results found.</div>';
+        return;
+      }
+      items.forEach(it => {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        const a = document.createElement('a');
+        a.href = `/blog/${it.slug}`;
+        a.textContent = it.title;
+        div.appendChild(a);
+        if (it.description) {
+          const p = document.createElement('div');
+          p.style.fontSize = '0.85rem';
+          p.style.color = 'var(--text-muted)';
+          p.textContent = it.description;
+          div.appendChild(p);
+        }
+        results.appendChild(div);
+      });
+    };
+
+    const matches = (q) => {
+      if (!q) return index;
+      const query = q.toLowerCase();
+      return index.filter(p => {
+        const hay = [p.title, p.description, ...(p.tags||[])].join(' ').toLowerCase();
+        return hay.includes(query);
+      });
+    };
+
+    const fetchIndex = async () => {
+      try {
+        const res = await fetch('/search.json');
+        if (res.ok) {
+          index = await res.json();
+        }
+      } catch(e) {
+        console.error('Search index load failed', e);
+      }
+    };
+
+    const open = async () => {
+      overlay.style.display = 'grid';
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      if (index.length === 0) await fetchIndex();
+      input.focus();
+    };
+    const close = () => {
+      overlay.style.display = 'none';
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+      input.value = '';
+      results.innerHTML = '';
+    };
+
+    if (openBtn) {
+      openBtn.addEventListener('click', open);
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', close);
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay && !overlay.hidden) close();
+    });
+    input && input.addEventListener('input', (e) => {
+      const q = e.target.value;
+      render(matches(q));
+    });
+    // Close overlay if clicking outside the card (optional UX)
+    overlay?.addEventListener('click', (ev) => {
+      if (ev.target === overlay) close();
+    });
+  })();
+</script>

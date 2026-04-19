@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import MusicPlayer from '../components/MusicPlayer.astro';
 import StarfieldBg from '../components/StarfieldBg.astro';
 import '../styles/global.css';
+import TableOfContents from '../components/TableOfContents.astro';
 
 interface Props {
   title: string;
@@ -25,10 +26,33 @@ const { title, description, image } = Astro.props;
     <StarfieldBg />
     <Header />
     <main transition:animate="fade">
-      <slot />
+      <div class="blog-layout">
+        <section class="article-area" id="article-content">
+          <slot />
+        </section>
+        <aside class="toc-area" aria-label="Table of contents">
+          <TableOfContents />
+        </aside>
+      </div>
     </main>
     <Footer />
     <MusicPlayer />
+    <style>
+      .blog-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 2rem;
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      @media (max-width: 1024px) {
+        .blog-layout { grid-template-columns: 1fr; }
+        .toc-area { display: none; }
+      }
+      .article-area { min-width: 0; }
+      .toc-area { align-self: start; }
+    </style>
     <script>
       import { ViewTransitions } from 'astro:transitions';
       document.addEventListener('astro:page-load', () => {});

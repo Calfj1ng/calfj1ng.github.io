@@ -80,9 +80,12 @@ pre {
 }
 
 pre code {
-  background: none;
-  padding: 0;
-  color: inherit;
+  display: block;
+  padding: 1rem;
+  background: rgba(10, 14, 26, 0.9);
+  border-radius: 8px;
+  color: #cdd6f4;
+  overflow-x: auto;
 }
 
 blockquote {

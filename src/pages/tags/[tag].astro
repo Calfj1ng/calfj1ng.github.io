@@ -1,0 +1,96 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+ 
+export async function getStaticPaths() {
+  const allPosts = (await getCollection('blog'));
+  const tagSet = new Set<string>();
+  allPosts.forEach((p) => (p.data.tags ?? []).forEach((t) => tagSet.add(t)));
+  return Array.from(tagSet).map((t) => ({ params: { tag: t } }));
+}
+
+const { tag } = Astro.params;
+const posts = (await getCollection('blog')).filter((p) => (p.data.tags ?? []).includes(tag)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout title={`Tag: ${tag} | My Blog`} description={`Posts with tag ${tag}`}>
+  <section class="tag-detail-list">
+    <div class="header">
+      <h1>Tag: {tag}</h1>
+      <a href="/tags/" class="back-link">← 返回所有标签</a>
+    </div>
+    <p class="subtitle"><FormattedDate date={new Date()} /></p>
+
+    <div class="posts">
+      {posts.map((post) => (
+        <article class="post-card">
+          <a href={`/blog/${post.id}/`}>
+            <h2>{post.data.title}</h2>
+          </a>
+          <p class="description">{post.data.description}</p>
+          <div class="meta">
+            <FormattedDate date={post.data.pubDate} />
+            {post.data.tags && (
+              <div class="tags">
+                {post.data.tags.map((t) => (
+                  <span class="tag">{t}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tag-detail-list h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .back-link {
+    margin-left: auto;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .tag-detail-list .header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin: 0.5rem 0 1.5rem;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .post-card h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+  .post-card a { color: var(--text); }
+  .post-card a:hover { color: var(--accent); text-decoration: none; }
+  .description { color: var(--text-muted); margin: 0 0 0.75rem; font-size: 0.95rem; }
+  .meta { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; color: var(--text-muted); }
+  .tags { display: flex; gap: 0.4rem; }
+  .tag { background: var(--accent-light); color: var(--accent); padding: 0.15em 0.6em; border-radius: 999px; font-size: 0.8rem; }
+</style>

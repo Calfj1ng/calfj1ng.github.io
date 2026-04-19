@@ -1,0 +1,78 @@
+---
+---
+<div class="toc" aria-label="Table of contents">
+  <h4>On this page</h4>
+  <ul id="toc-list"></ul>
+</div>
+<style>
+  .toc {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(10,18,35,0.8);
+  }
+  #toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #toc-list li {
+    margin: 0.25rem 0;
+  }
+  #toc-list a {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  #toc-list a:hover {
+    color: var(--accent);
+  }
+  #toc-list li.active > a {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  /* Sticky TOC on wide screens */
+  @media (min-width: 1025px) {
+    .toc { position: sticky; top: 4rem; }
+  }
+</style>
+<script>
+  // Build TOC from h2 and h3 in article content
+  (function(){
+    const article = document.querySelector('#article-content');
+    const tocList = document.getElementById('toc-list');
+    if (!article || !tocList) return;
+    const headers = Array.from(article.querySelectorAll('h2, h3'));
+    if (headers.length === 0) {
+      document.querySelector('.toc')?.remove();
+      return;
+    }
+    headers.forEach((h, idx) => {
+      if (!h.id) h.id = 'toc-' + idx;
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent ?? '';
+      li.appendChild(a);
+      if (h.tagName === 'H3') li.style.paddingLeft = '1rem';
+      tocList.appendChild(li);
+    });
+
+    // IntersectionObserver to highlight current section
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        const id = e.target.id;
+        const link = tocList.querySelector(`a[href="#${id}"]`).parentElement;
+        if (link) link.classList.toggle('active', e.isIntersecting);
+      });
+    }, { rootMargin: '-40% 0px -40% 0px', threshold: 0 });
+    headers.forEach(h => obs.observe(h));
+
+    // Smooth scrolling on click
+    tocList.querySelectorAll('a').forEach(a => a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', a.getAttribute('href'));
+    }));
+  })();
+</script>

@@ -1,0 +1,47 @@
+---
+---
+<button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
+<style>
+  .back-to-top {
+    position: fixed;
+    bottom: 5rem; /* above music player by requirement */
+    right: 1.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--accent);
+    color: white;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 9999;
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+<script>
+  (function(){
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+    const onScroll = () => {
+      if (window.scrollY > 300) btn.classList.add('visible');
+      else btn.classList.remove('visible');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    // Keyboard accessibility
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  })();
+</script>

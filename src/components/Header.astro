@@ -1,8 +1,11 @@
 ---
+import Search from './Search.astro';
+
 const navItems = [
   { label: 'Home', href: '/' },
   { label: 'Blog', href: '/blog/' },
   { label: 'About', href: '/about/' },
+  { label: '友链', href: '/friends/' },
 ];
 ---
 
@@ -10,17 +13,21 @@ const navItems = [
   <nav>
     <div class="nav-inner">
       <a href="/" class="site-title">My Blog</a>
-      <ul class="nav-links">
-        {navItems.map(({ label, href }) => (
-          <li>
-            <a href={href} class:list={[{ active: Astro.url.pathname === href }]}>
-              {label}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <div class="nav-actions">
+        <button id="search-btn" class="search-btn" aria-label="Open search">🔎</button>
+        <ul class="nav-links">
+          {navItems.map(({ label, href }) => (
+            <li>
+              <a href={href} class:list={[{ active: Astro.url.pathname === href }]}>
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   </nav>
+<Search />
 </header>
 
 <style>
@@ -68,6 +75,25 @@ const navItems = [
 
   .nav-links a:hover,
   .nav-links a.active {
+    color: var(--accent);
+  }
+  
+  /* Search button styling */
+  .search-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 0.25rem;
+  }
+  .search-btn:hover {
     color: var(--accent);
   }
 </style>

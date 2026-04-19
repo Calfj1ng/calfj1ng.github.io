@@ -1,0 +1,86 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+ 
+// Fetch all blog posts and compute unique tags with counts
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  const tgs: string[] = post.data.tags ?? [];
+  for (const t of tgs) {
+    tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+  }
+}
+const tags = Array.from(tagCounts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+---
+
+<BaseLayout title="Tags | My Blog" description="标签列表">
+  <section class="tags-list">
+    <h1>Tags</h1>
+    <p class="subtitle">
+      <FormattedDate date={new Date()} />
+    </p>
+
+    <div class="tags-grid">
+      {tags.map(([tag, count]) => (
+        <a class="tag-pill" href={`/tags/${tag}/`}>
+          <span class="tag-name">{tag}</span>
+          <span class="tag-count">{count}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tags-list h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6em 0.9em;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .tag-pill:hover {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .tag-name {
+    margin-right: 0.5em;
+  }
+
+  .tag-count {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+  }
+</style>
