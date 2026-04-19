@@ -1,12 +1,10 @@
 ---
 ---
 
-<div class="snowfall-container" id="snowfall-bg">
-  <div class="night-sky"></div>
-</div>
+<canvas id="snow-mountain-bg"></canvas>
 
 <style>
-  .snowfall-container {
+  #snow-mountain-bg {
     position: fixed;
     top: 0;
     left: 0;
@@ -14,162 +12,509 @@
     height: 100%;
     z-index: -1;
     pointer-events: none;
-    overflow: hidden;
-  }
-
-  .night-sky {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      180deg,
-      #0a0e1a 0%,
-      #0f1b33 20%,
-      #162040 40%,
-      #1a2845 60%,
-      #1e3050 80%,
-      #243855 100%
-    );
-  }
-
-  .snowflake {
-    position: absolute;
-    top: -20px;
-    pointer-events: none;
-    will-change: transform;
-  }
-
-  .snowflake-dot {
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(200,215,240,0.6) 100%);
-    box-shadow: 0 0 4px rgba(200, 220, 255, 0.3);
-  }
-
-  .snowflake-crystal {
-    position: relative;
-  }
-
-  .snowflake-crystal::before {
-    content: '❄';
-    color: rgba(220, 235, 255, 0.7);
-    text-shadow: 0 0 6px rgba(180, 210, 255, 0.4);
-  }
-
-  @keyframes snowfall {
-    0% {
-      transform: translateY(-20px) translateX(0) rotate(0deg);
-      opacity: 0;
-    }
-    5% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 0.8;
-    }
-    100% {
-      transform: translateY(calc(100vh + 40px)) translateX(var(--drift)) rotate(var(--spin));
-      opacity: 0;
-    }
-  }
-
-  /* 小星星 */
-  .star {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(200, 220, 255, 0.5);
-    animation: twinkle var(--twinkle-duration) ease-in-out infinite alternate;
-  }
-
-  @keyframes twinkle {
-    0% { opacity: 0.2; transform: scale(0.8); }
-    100% { opacity: 0.8; transform: scale(1.2); }
-  }
-
-  /* 底部积雪光晕 */
-  .ground-glow {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 15%;
-    background: linear-gradient(
-      to top,
-      rgba(180, 200, 230, 0.08) 0%,
-      rgba(140, 170, 210, 0.03) 40%,
-      transparent 100%
-    );
-    pointer-events: none;
+    display: block;
   }
 </style>
 
 <script>
-  function initSnowfall() {
-    if ((window as any).__snowfallInit) return;
-    (window as any).__snowfallInit = true;
+(function () {
+  if ((window as any).__snowMountainInit) return;
+  (window as any).__snowMountainInit = true;
 
-    const container = document.getElementById('snowfall-bg');
-    if (!container) return;
+  const canvas = document.getElementById('snow-mountain-bg') as HTMLCanvasElement | null;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-    // --- 星星 ---
-    const starCount = 60;
-    for (let i = 0; i < starCount; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      const size = Math.random() * 2 + 0.5;
-      star.style.cssText = `
-        width: ${size}px;
-        height: ${size}px;
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 50}%;
-        --twinkle-duration: ${Math.random() * 3 + 2}s;
-        animation-delay: ${Math.random() * 5}s;
-      `;
-      container.appendChild(star);
-    }
+  // ── State ──────────────────────────────────────────────
+  let W = 0, H = 0;
+  let staticLayer: HTMLCanvasElement | null = null;
+  let stars: { x: number; y: number; size: number; phase: number; speed: number }[] = [];
+  let snowflakes: {
+    x: number; y: number; size: number; speed: number;
+    drift: number; wobbleAmp: number; wobbleSpeed: number; wobblePhase: number;
+    baseOpacity: number; opacity: number; type: 'dot' | 'crystal';
+    rotation: number; rotSpeed: number;
+  }[] = [];
+  let animId = 0;
+  let isVisible = true;
+  let lastFrame = 0;
+  const TARGET_FPS = 30;
+  const FRAME_MS = 1000 / TARGET_FPS;
 
-    // --- 底部光晕 ---
-    const glow = document.createElement('div');
-    glow.className = 'ground-glow';
-    container.appendChild(glow);
+  // ── Mountain range definitions (normalized 0‑1) ───────
+  const backRange = [
+    { x: 0, y: 0.57 }, { x: 0.07, y: 0.53 }, { x: 0.14, y: 0.46 }, { x: 0.22, y: 0.52 },
+    { x: 0.30, y: 0.49 }, { x: 0.38, y: 0.43 }, { x: 0.46, y: 0.50 }, { x: 0.54, y: 0.47 },
+    { x: 0.62, y: 0.44 }, { x: 0.70, y: 0.51 }, { x: 0.78, y: 0.46 }, { x: 0.86, y: 0.52 },
+    { x: 0.93, y: 0.48 }, { x: 1.0, y: 0.56 }
+  ];
 
-    // --- 雪花 ---
-    const snowflakeCount = 120;
-    const DOT_RATIO = 0.8;
+  const midRange = [
+    { x: 0, y: 0.60 }, { x: 0.06, y: 0.54 }, { x: 0.13, y: 0.45 }, { x: 0.20, y: 0.41 },
+    { x: 0.28, y: 0.50 }, { x: 0.35, y: 0.43 }, { x: 0.43, y: 0.37 }, { x: 0.51, y: 0.48 },
+    { x: 0.58, y: 0.42 }, { x: 0.65, y: 0.46 }, { x: 0.72, y: 0.39 }, { x: 0.80, y: 0.49 },
+    { x: 0.87, y: 0.43 }, { x: 0.94, y: 0.51 }, { x: 1.0, y: 0.59 }
+  ];
 
-    for (let i = 0; i < snowflakeCount; i++) {
-      const isDot = Math.random() < DOT_RATIO;
-      const el = document.createElement('div');
-      el.className = 'snowflake';
+  const frontRange = [
+    { x: 0, y: 0.66 }, { x: 0.06, y: 0.58 }, { x: 0.13, y: 0.50 }, { x: 0.21, y: 0.44 },
+    { x: 0.29, y: 0.53 }, { x: 0.37, y: 0.47 }, { x: 0.44, y: 0.32 },
+    { x: 0.52, y: 0.49 }, { x: 0.60, y: 0.43 }, { x: 0.68, y: 0.52 },
+    { x: 0.76, y: 0.45 }, { x: 0.84, y: 0.55 }, { x: 0.92, y: 0.49 }, { x: 1.0, y: 0.63 }
+  ];
 
-      if (isDot) {
-        const size = Math.random() * 8 + 3;
-        const inner = document.createElement('div');
-        inner.className = 'snowflake-dot';
-        inner.style.cssText = `width:${size}px;height:${size}px;`;
-        el.appendChild(inner);
-      } else {
-        const size = Math.random() * 28 + 14;
-        const inner = document.createElement('div');
-        inner.className = 'snowflake-crystal';
-        inner.style.cssText = `font-size:${size}px;`;
-        el.appendChild(inner);
-      }
+  const MAIN_PEAK_IDX = 6; // index in frontRange
 
-      const left = Math.random() * 100;
-      const duration = Math.random() * 25 + 15;
-      const delay = Math.random() * 35;
-      const drift = (Math.random() * 80 + 20) * (Math.random() < 0.5 ? 1 : -1);
-      const spin = Math.random() * 720 - 360;
-
-      el.style.cssText = `
-        left: ${left}%;
-        --drift: ${drift}px;
-        --spin: ${spin}deg;
-        animation: snowfall ${duration}s linear ${delay}s infinite;
-      `;
-
-      container.appendChild(el);
+  // ── Smooth curve through points (Catmull‑Rom → Bezier) ─
+  function traceSmoothCurve(c: CanvasRenderingContext2D, pts: { x: number; y: number }[]) {
+    c.moveTo(pts[0].x, pts[0].y);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      c.bezierCurveTo(
+        p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6,
+        p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6,
+        p2.x, p2.y
+      );
     }
   }
 
-  initSnowfall();
+  function buildMountainPath(c: CanvasRenderingContext2D, pts: { x: number; y: number }[], w: number, h: number) {
+    const px = pts.map(p => ({ x: p.x * w, y: p.y * h }));
+    c.beginPath();
+    traceSmoothCurve(c, px);
+    c.lineTo(w, h);
+    c.lineTo(0, h);
+    c.closePath();
+  }
+
+  function drawMountainFill(c: CanvasRenderingContext2D, pts: { x: number; y: number }[], color: string, w: number, h: number) {
+    buildMountainPath(c, pts, w, h);
+    c.fillStyle = color;
+    c.fill();
+  }
+
+  function drawSnowCaps(c: CanvasRenderingContext2D, pts: { x: number; y: number }[], w: number, h: number) {
+    c.save();
+    buildMountainPath(c, pts, w, h);
+    c.clip();
+
+    for (let i = 1; i < pts.length - 1; i++) {
+      if (pts[i].y < pts[i - 1].y && pts[i].y < pts[i + 1].y) {
+        const px = pts[i].x * w;
+        const py = pts[i].y * h;
+        const capW = w * 0.09;
+        const capD = h * 0.09;
+        const grad = c.createLinearGradient(px, py, px, py + capD);
+        grad.addColorStop(0, 'rgba(215, 232, 255, 0.75)');
+        grad.addColorStop(0.35, 'rgba(195, 218, 248, 0.35)');
+        grad.addColorStop(1, 'rgba(175, 200, 235, 0)');
+        c.fillStyle = grad;
+        c.beginPath();
+        c.moveTo(px, py);
+        c.lineTo(px - capW, py + capD);
+        c.lineTo(px + capW, py + capD);
+        c.closePath();
+        c.fill();
+      }
+    }
+    c.restore();
+  }
+
+  // ── Moon ───────────────────────────────────────────────
+  function drawMoon(c: CanvasRenderingContext2D, x: number, y: number, r: number) {
+    const g1 = c.createRadialGradient(x, y, r, x, y, r * 6);
+    g1.addColorStop(0, 'rgba(200, 220, 255, 0.08)');
+    g1.addColorStop(0.35, 'rgba(180, 205, 245, 0.025)');
+    g1.addColorStop(1, 'rgba(180, 200, 240, 0)');
+    c.fillStyle = g1;
+    c.beginPath();
+    c.arc(x, y, r * 6, 0, Math.PI * 2);
+    c.fill();
+
+    c.fillStyle = 'rgba(220, 235, 255, 0.88)';
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fill();
+
+    c.fillStyle = '#0c1428';
+    c.beginPath();
+    c.arc(x + r * 0.38, y - r * 0.12, r * 0.86, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  // ── Person silhouette ──────────────────────────────────
+  function drawPersonSilhouette(c: CanvasRenderingContext2D, px: number, py: number, h: number) {
+    const s = h / 50;
+    const col = '#040810';
+    c.fillStyle = col;
+    c.strokeStyle = col;
+    c.lineCap = 'round';
+
+    // Head
+    c.beginPath();
+    c.arc(px + s, py - 46 * s, 4.2 * s, 0, Math.PI * 2);
+    c.fill();
+
+    // Torso
+    c.beginPath();
+    c.moveTo(px - 5 * s, py - 39 * s);
+    c.lineTo(px + 7 * s, py - 39 * s);
+    c.lineTo(px + 5 * s, py - 18 * s);
+    c.lineTo(px - 3 * s, py - 18 * s);
+    c.closePath();
+    c.fill();
+
+    // Left leg
+    c.beginPath();
+    c.moveTo(px - 3 * s, py - 18 * s);
+    c.lineTo(px - 7 * s, py + s);
+    c.lineTo(px - 1 * s, py + s);
+    c.lineTo(px + 0 * s, py - 18 * s);
+    c.closePath();
+    c.fill();
+
+    // Right leg
+    c.beginPath();
+    c.moveTo(px + 1 * s, py - 18 * s);
+    c.lineTo(px + 3 * s, py + s);
+    c.lineTo(px + 9 * s, py + s);
+    c.lineTo(px + 5 * s, py - 18 * s);
+    c.closePath();
+    c.fill();
+
+    // Left arm (at side)
+    c.lineWidth = 3.2 * s;
+    c.beginPath();
+    c.moveTo(px - 5 * s, py - 37 * s);
+    c.lineTo(px - 10 * s, py - 20 * s);
+    c.stroke();
+
+    // Right arm (raised)
+    c.beginPath();
+    c.moveTo(px + 7 * s, py - 37 * s);
+    c.lineTo(px + 16 * s, py - 46 * s);
+    c.stroke();
+
+    // Staff
+    c.lineWidth = 1.8 * s;
+    c.beginPath();
+    c.moveTo(px + 17 * s, py - 50 * s);
+    c.lineTo(px + 12 * s, py + s);
+    c.stroke();
+  }
+
+  // ── Slope snow texture ─────────────────────────────────
+  function drawSlopeSnow(c: CanvasRenderingContext2D, w: number, h: number) {
+    let seed = 42;
+    const srand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+    const ranges = [backRange, midRange, frontRange];
+    for (const range of ranges) {
+      c.fillStyle = 'rgba(220, 235, 255, 0.12)';
+      for (let i = 0; i < 70; i++) {
+        const rx = srand();
+        let surfaceY = 1;
+        for (let j = 0; j < range.length - 1; j++) {
+          if (rx >= range[j].x && rx <= range[j + 1].x) {
+            const t = (rx - range[j].x) / (range[j + 1].x - range[j].x);
+            surfaceY = range[j].y + t * (range[j + 1].y - range[j].y);
+            break;
+          }
+        }
+        const px = rx * w;
+        const py = (surfaceY + srand() * 0.06) * h;
+        const sz = srand() * 1.4 + 0.5;
+        c.beginPath();
+        c.arc(px, py, sz, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+  }
+
+  // ── Pre‑render static layer (mountains, person, fog) ──
+  function renderStaticLayer() {
+    const off = document.createElement('canvas');
+    off.width = W;
+    off.height = H;
+    const sc = off.getContext('2d')!;
+
+    // Mountains back → front
+    drawMountainFill(sc, backRange, '#0f1b33', W, H);
+    drawSnowCaps(sc, backRange, W, H);
+
+    drawMountainFill(sc, midRange, '#152840', W, H);
+    drawSnowCaps(sc, midRange, W, H);
+
+    drawMountainFill(sc, frontRange, '#1a3050', W, H);
+    drawSnowCaps(sc, frontRange, W, H);
+
+    // Slope snow particles
+    drawSlopeSnow(sc, W, H);
+
+    // Person silhouette on main peak
+    const peakPt = frontRange[MAIN_PEAK_IDX];
+    const peakPx = peakPt.x * W;
+    const peakPy = peakPt.y * H;
+    const personH = Math.max(30, Math.min(60, H * 0.042));
+
+    // Faint aura around person
+    const aGrad = sc.createRadialGradient(peakPx, peakPy - personH * 0.45, 0, peakPx, peakPy - personH * 0.45, personH * 2.5);
+    aGrad.addColorStop(0, 'rgba(108, 180, 238, 0.07)');
+    aGrad.addColorStop(0.5, 'rgba(108, 180, 238, 0.02)');
+    aGrad.addColorStop(1, 'rgba(108, 180, 238, 0)');
+    sc.fillStyle = aGrad;
+    sc.beginPath();
+    sc.arc(peakPx, peakPy - personH * 0.45, personH * 2.5, 0, Math.PI * 2);
+    sc.fill();
+
+    drawPersonSilhouette(sc, peakPx, peakPy, personH);
+
+    // Fog / mist near mountain base
+    const fogGrad = sc.createLinearGradient(0, H * 0.64, 0, H);
+    fogGrad.addColorStop(0, 'rgba(14, 24, 48, 0)');
+    fogGrad.addColorStop(0.45, 'rgba(16, 28, 52, 0.18)');
+    fogGrad.addColorStop(1, 'rgba(18, 32, 56, 0.35)');
+    sc.fillStyle = fogGrad;
+    sc.fillRect(0, H * 0.64, W, H * 0.36);
+
+    // Ground snow accumulation glow
+    const gGrad = sc.createLinearGradient(0, H * 0.90, 0, H);
+    gGrad.addColorStop(0, 'rgba(180, 200, 230, 0)');
+    gGrad.addColorStop(0.5, 'rgba(160, 185, 220, 0.025)');
+    gGrad.addColorStop(1, 'rgba(140, 170, 210, 0.055)');
+    sc.fillStyle = gGrad;
+    sc.fillRect(0, H * 0.90, W, H * 0.10);
+
+    staticLayer = off;
+  }
+
+  // ── Stars ──────────────────────────────────────────────
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < 68; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.44,
+        size: Math.random() * 1.5 + 0.5,
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.003 + 0.001
+      });
+    }
+  }
+
+  function drawStars(time: number) {
+    for (const s of stars) {
+      const tw = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
+      const alpha = 0.25 + 0.55 * tw;
+      const r = s.size * (0.8 + tw * 0.4);
+      ctx!.fillStyle = `rgba(200,220,255,${alpha.toFixed(3)})`;
+      ctx!.beginPath();
+      ctx!.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx!.fill();
+    }
+  }
+
+  // ── Aurora ─────────────────────────────────────────────
+  function drawAurora(time: number) {
+    const c = ctx!;
+    c.save();
+    for (let band = 0; band < 3; band++) {
+      c.globalAlpha = 0.018 + band * 0.004;
+      const baseY = H * (0.07 + band * 0.035);
+      const bh = H * 0.11;
+      const grad = c.createLinearGradient(0, baseY, 0, baseY + bh);
+      grad.addColorStop(0, 'rgba(42,138,90,0)');
+      grad.addColorStop(0.3, 'rgba(42,138,90,0.5)');
+      grad.addColorStop(0.5, 'rgba(50,105,150,0.4)');
+      grad.addColorStop(0.7, 'rgba(42,138,90,0.5)');
+      grad.addColorStop(1, 'rgba(42,138,90,0)');
+      c.fillStyle = grad;
+      c.beginPath();
+      const steps = 8;
+      for (let i = 0; i <= steps; i++) {
+        const x = (W / steps) * i;
+        const y = baseY + Math.sin(x * 0.002 + time * 0.0004 + band * 1.5) * 22
+                        + Math.sin(time * 0.0003 + band) * 14;
+        if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      for (let i = steps; i >= 0; i--) {
+        const x = (W / steps) * i;
+        const y = baseY + bh + Math.sin(x * 0.002 + time * 0.0004 + band * 1.5 + 2) * 16
+                          + Math.cos(time * 0.00025 + band) * 10;
+        c.lineTo(x, y);
+      }
+      c.closePath();
+      c.fill();
+    }
+    c.restore();
+  }
+
+  // ── Snowflakes ─────────────────────────────────────────
+  function createSnowflake(fromTop: boolean) {
+    const isCrystal = Math.random() > 0.8;
+    return {
+      x: Math.random() * (W + 80) - 40,
+      y: fromTop ? -(Math.random() * 50 + 10) : Math.random() * H,
+      size: isCrystal ? (Math.random() * 16 + 12) : (Math.random() * 8 + 2),
+      speed: isCrystal ? (Math.random() * 0.4 + 0.2) : (Math.random() * 0.8 + 0.4),
+      drift: (Math.random() - 0.5) * 0.2,
+      wobbleAmp: Math.random() * 22 + 8,
+      wobbleSpeed: Math.random() * 0.0015 + 0.0005,
+      wobblePhase: Math.random() * Math.PI * 2,
+      baseOpacity: isCrystal ? (Math.random() * 0.35 + 0.2) : (Math.random() * 0.45 + 0.35),
+      opacity: 1,
+      type: isCrystal ? 'crystal' as const : 'dot' as const,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.012
+    };
+  }
+
+  function initSnowflakes() {
+    snowflakes = [];
+    for (let i = 0; i < 125; i++) {
+      snowflakes.push(createSnowflake(false));
+    }
+  }
+
+  function updateSnowflakes(time: number) {
+    for (const sf of snowflakes) {
+      sf.y += sf.speed;
+      sf.x += sf.drift + Math.sin(time * sf.wobbleSpeed + sf.wobblePhase) * 0.25;
+      sf.rotation += sf.rotSpeed;
+      if (sf.y < 30) sf.opacity = sf.baseOpacity * (sf.y / 30);
+      else if (sf.y > H - 30) sf.opacity = sf.baseOpacity * Math.max(0, (H - sf.y) / 30);
+      else sf.opacity = sf.baseOpacity;
+      if (sf.y > H + 40) { sf.y = -(Math.random() * 50 + 10); sf.x = Math.random() * (W + 80) - 40; }
+      if (sf.x > W + 50) sf.x = -50;
+      if (sf.x < -50) sf.x = W + 50;
+    }
+  }
+
+  function drawSnowflakeDot(sf: typeof snowflakes[0]) {
+    const c = ctx!;
+    c.globalAlpha = sf.opacity;
+    // Glow for larger dots
+    if (sf.size > 4) {
+      c.fillStyle = 'rgba(190,210,240,0.18)';
+      c.beginPath();
+      c.arc(sf.x, sf.y, sf.size * 2.2, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.fillStyle = '#dce8ff';
+    c.beginPath();
+    c.arc(sf.x, sf.y, sf.size, 0, Math.PI * 2);
+    c.fill();
+    c.globalAlpha = 1;
+  }
+
+  function drawSnowflakeCrystal(sf: typeof snowflakes[0]) {
+    const c = ctx!;
+    c.save();
+    c.translate(sf.x, sf.y);
+    c.rotate(sf.rotation);
+    c.globalAlpha = sf.opacity;
+    c.strokeStyle = 'rgba(220,235,255,0.65)';
+    c.lineWidth = 1;
+    c.lineCap = 'round';
+    const r = sf.size / 2;
+    for (let i = 0; i < 6; i++) {
+      c.save();
+      c.rotate(i * Math.PI / 3);
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(0, -r);
+      c.stroke();
+      const bLen = r * 0.32;
+      const bY = r * 0.48;
+      c.beginPath();
+      c.moveTo(0, -bY); c.lineTo(-bLen * 0.7, -bY - bLen * 0.5);
+      c.moveTo(0, -bY); c.lineTo(bLen * 0.7, -bY - bLen * 0.5);
+      c.stroke();
+      c.restore();
+    }
+    c.restore();
+  }
+
+  // ── Sky gradient (drawn each frame – cheap) ────────────
+  function drawSky() {
+    const c = ctx!;
+    const grad = c.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#0a0e1a');
+    grad.addColorStop(0.25, '#0f1b33');
+    grad.addColorStop(0.5, '#162040');
+    grad.addColorStop(0.75, '#1a2845');
+    grad.addColorStop(1, '#1e3050');
+    c.fillStyle = grad;
+    c.fillRect(0, 0, W, H);
+  }
+
+  // ── Animation loop ─────────────────────────────────────
+  function animate(time: number) {
+    animId = requestAnimationFrame(animate);
+    if (!isVisible) return;
+    const delta = time - lastFrame;
+    if (delta < FRAME_MS) return;
+    lastFrame = time - (delta % FRAME_MS);
+
+    const c = ctx!;
+
+    // 1. Sky
+    drawSky();
+
+    // 2. Aurora (behind mountains)
+    drawAurora(time);
+
+    // 3. Stars (behind mountains)
+    drawStars(time);
+
+    // 4. Static layer (mountains, person, fog, glow)
+    if (staticLayer) c.drawImage(staticLayer, 0, 0);
+
+    // 5. Snowflakes (in front of everything)
+    updateSnowflakes(time);
+    for (const sf of snowflakes) {
+      if (sf.type === 'crystal') drawSnowflakeCrystal(sf);
+      else drawSnowflakeDot(sf);
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  function init() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    initStars();
+    initSnowflakes();
+    renderStaticLayer();
+    lastFrame = performance.now();
+    animId = requestAnimationFrame(animate);
+  }
+
+  // ── Events ─────────────────────────────────────────────
+  let resizeTimer: ReturnType<typeof setTimeout>;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+      initStars();
+      initSnowflakes();
+      renderStaticLayer();
+    }, 150);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    isVisible = !document.hidden;
+    if (isVisible) lastFrame = performance.now();
+  });
+
+  init();
+})();
 </script>
