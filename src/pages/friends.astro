@@ -8,32 +8,7 @@ type Friend = {
   color: string;
 };
 
-const friends: Friend[] = [
-  {
-    name: 'Alice Chen',
-    description: 'Frontend engineer, loves design systems',
-    href: 'https://example.com/alice',
-    color: '#6e8bff',
-  },
-  {
-    name: 'Tech Harbor',
-    description: 'Cybersecurity & DevOps',
-    href: 'https://example.org',
-    color: '#ff7f50',
-  },
-  {
-    name: 'CodePal Studio',
-    description: 'Open-source contributor',
-    href: 'https://example.dev',
-    color: '#8dd3c7',
-  },
-  {
-    name: 'Blog Circuits',
-    description: 'Tech blog network',
-    href: 'https://blogcircuits.example',
-    color: '#ffd700',
-  },
-];
+const friends: Friend[] = [];
 ---
 
 <BaseLayout title="友链 | Calfjing的小世界" description="友情链接">
@@ -42,6 +17,9 @@ const friends: Friend[] = [
     <p class="subtitle">以下是本站推荐的友情链接，点击访问</p>
 
     <div class="grid">
+      {friends.length === 0 && (
+        <p class="empty-hint">暂无友链，如需交换友链请联系 <a href="mailto:jing1173@outlook.com">jing1173@outlook.com</a></p>
+      )}
       {friends.map((f) => (
         <a class="friend-card" href={f.href} target="_blank" rel="noopener">
           <div class="avatar" style={`background: ${f.color};`}>
@@ -84,4 +62,6 @@ const friends: Friend[] = [
   .name { font-weight: 600; }
   .description { font-size: 0.9rem; color: var(--text-muted); }
   .visit { color: var(--text-muted); }
+  .empty-hint { color: var(--text-muted); line-height: 1.8; }
+  .empty-hint a { color: var(--accent); }
 </style>
