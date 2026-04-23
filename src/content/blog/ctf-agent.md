@@ -1,7 +1,7 @@
 ---
 title: 从零搓一个 CTF AI Agent — 黑板架构 + DAG 多 Agent 框架
 description: 用 Python 搭建一个基于黑板架构和 DAG 规划的多 Agent CTF 解题框架，三省六部协同解题，支持全题型、多模型切换。
-pubDate: 2026-04-24
+pubDate: 2026-04-20
 tags: ['CTF', 'AI', 'Python', 'Docker', '安全', '多Agent']
 ---
 
