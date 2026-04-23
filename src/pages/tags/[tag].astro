@@ -16,7 +16,7 @@ const posts = (await getCollection('blog')).filter((p) => (p.data.tags ?? []).in
 );
 ---
 
-<BaseLayout title={`Tag: ${tag} | My Blog`} description={`Posts with tag ${tag}`}>
+<BaseLayout title={`标签: ${tag} | Calfjing的小世界`} description={`Posts with tag ${tag}`}>
   <section class="tag-detail-list">
     <div class="header">
       <h1>Tag: {tag}</h1>
