@@ -9,9 +9,6 @@ tags: ['CTF', 'AI', 'Python', 'Docker', '安全']
 
 打 CTF 的时候总有些题想让人工智能帮忙分析，于是干脆自己搓了一个 Agent，支持全题型、多模型切换，部署到服务器上用浏览器就能打。
 
-## 最终效果
-
-浏览器打开 `http://你的服务器:5050`，输入题目描述，Agent 自动分类题型、分析、调工具、找 flag。
 
 支持的功能：
 - **6 类题型全覆盖** — Web / Crypto / Reverse / Pwn / Forensics / Misc
