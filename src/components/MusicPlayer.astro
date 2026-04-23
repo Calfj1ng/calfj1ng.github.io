@@ -1,10 +1,8 @@
 ---
-import { playlist } from '../data/playlist';
 ---
 
-{playlist.length > 0 && (
-  <button id="music-toggle" class="music-toggle" aria-label="播放音乐">🎵</button>
-)}
+<audio id="bg-audio" src="/music/bg-music.mp4" loop preload="auto"></audio>
+<button id="music-toggle" class="music-toggle" aria-label="播放音乐">🎵</button>
 
 <style>
   .music-toggle {
@@ -42,46 +40,41 @@ import { playlist } from '../data/playlist';
 </style>
 
 <script>
-  const SRC = '/music/bg-music.mp4';
-  let audio: HTMLAudioElement | null = null;
-
-  function getAudio(): HTMLAudioElement {
-    if (!audio) {
-      audio = new Audio(SRC);
-      audio.loop = true;
-      audio.volume = 0.4;
-    }
-    return audio;
-  }
-
-  function toggle() {
-    const a = getAudio();
+  function setup() {
     const btn = document.getElementById('music-toggle');
-    if (!btn) return;
+    const audio = document.getElementById('bg-audio') as HTMLAudioElement | null;
+    if (!btn || !audio) return;
 
-    if (a.paused) {
-      a.play().then(() => {
-        btn.textContent = '🔊';
-        btn.classList.add('playing');
-      }).catch(() => {});
-    } else {
-      a.pause();
-      btn.textContent = '🎵';
-      btn.classList.remove('playing');
+    // Restore state from session (survives page navigation)
+    const wasPlaying = sessionStorage.getItem('music-playing') === 'true';
+    if (wasPlaying) {
+      audio.play().catch(() => {});
+      btn.textContent = '🔊';
+      btn.classList.add('playing');
     }
-  }
 
-  // Bind button on every page load (View Transitions safe)
-  document.addEventListener('astro:page-load', () => {
-    const btn = document.getElementById('music-toggle');
-    if (btn) {
-      btn.removeEventListener('click', toggle);
-      btn.addEventListener('click', toggle);
-      // Restore visual state if audio exists and is playing
-      if (audio && !audio.paused) {
-        btn.textContent = '🔊';
-        btn.classList.add('playing');
+    // Remove old listener before adding new one (View Transitions)
+    const newBtn = btn.cloneNode(true) as HTMLElement;
+    btn.parentNode?.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play().then(() => {
+          newBtn.textContent = '🔊';
+          newBtn.classList.add('playing');
+          sessionStorage.setItem('music-playing', 'true');
+        }).catch((e) => {
+          console.warn('播放失败:', e.message);
+        });
+      } else {
+        audio.pause();
+        newBtn.textContent = '🎵';
+        newBtn.classList.remove('playing');
+        sessionStorage.setItem('music-playing', 'false');
       }
-    }
-  });
+    });
+  }
+
+  setup();
+  document.addEventListener('astro:page-load', setup);
 </script>
