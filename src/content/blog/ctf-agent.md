@@ -9,9 +9,7 @@ tags: ['CTF', 'AI', 'Python', 'Docker', '安全', '多Agent']
 
 打 CTF 的时候总有些题想让人工智能帮忙分析，于是干脆自己搓了一个 Agent。不是简单的单 Agent 循环，而是基于**黑板架构 + DAG 规划**的多 Agent 协作框架。
 
-## 最终效果
 
-浏览器打开 `http://你的服务器:5050`，输入题目描述，多个 Agent 自动分工协作解题。
 
 核心特性：
 - **三省六部多 Agent 架构** — Reasoner / Strategist / Verifier 三省 + Direction / Compressor / Hallucination 六部
@@ -268,9 +266,7 @@ cp .env.example .env
 # 3. 启动
 docker compose up -d ctf-agent
 
-# 4. 访问
-http://服务器IP:5050
-```
+
 
 ## 总结
 
