@@ -1,7 +1,7 @@
 ---
 ---
 
-<audio id="bg-audio" src="/music/bg-music.mp4" loop preload="auto"></audio>
+<video id="bg-audio" src="/music/bg-music.mp4" loop preload="auto" style="display:none" playsinline></video>
 <button id="music-toggle" class="music-toggle" aria-label="播放音乐">🎵</button>
 
 <style>
@@ -42,32 +42,32 @@
 <script>
   function setup() {
     const btn = document.getElementById('music-toggle');
-    const audio = document.getElementById('bg-audio') as HTMLAudioElement | null;
-    if (!btn || !audio) return;
+    const video = document.getElementById('bg-audio') as HTMLVideoElement | null;
+    if (!btn || !video) return;
 
-    // Restore state from session (survives page navigation)
     const wasPlaying = sessionStorage.getItem('music-playing') === 'true';
     if (wasPlaying) {
-      audio.play().catch(() => {});
+      video.play().catch(() => {});
       btn.textContent = '🔊';
       btn.classList.add('playing');
     }
 
-    // Remove old listener before adding new one (View Transitions)
     const newBtn = btn.cloneNode(true) as HTMLElement;
     btn.parentNode?.replaceChild(newBtn, btn);
 
     newBtn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play().then(() => {
+      if (video.paused) {
+        video.volume = 0.4;
+        video.play().then(() => {
           newBtn.textContent = '🔊';
           newBtn.classList.add('playing');
           sessionStorage.setItem('music-playing', 'true');
         }).catch((e) => {
-          console.warn('播放失败:', e.message);
+          console.warn('播放失败:', e);
+          newBtn.textContent = '❌';
         });
       } else {
-        audio.pause();
+        video.pause();
         newBtn.textContent = '🎵';
         newBtn.classList.remove('playing');
         sessionStorage.setItem('music-playing', 'false');
