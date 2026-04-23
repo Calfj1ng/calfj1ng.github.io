@@ -3,8 +3,44 @@ import { playlist } from '../data/playlist';
 ---
 
 <div id="bg-music" data-playlist={JSON.stringify(playlist)} style="display:none">
-  <audio id="bg-audio" loop preload="auto"></audio>
+  <audio id="bg-audio" preload="auto" loop></audio>
 </div>
+<button id="music-toggle" class="music-toggle" aria-label="播放/暂停音乐">🎵</button>
+
+<style>
+  .music-toggle {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .music-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(108, 180, 238, 0.3);
+  }
+  .music-toggle.playing {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 2px 10px rgba(108, 180, 238, 0.2); }
+    50% { box-shadow: 0 2px 18px rgba(108, 180, 238, 0.5); }
+  }
+</style>
 
 <script>
   function initBgMusic() {
@@ -12,33 +48,50 @@ import { playlist } from '../data/playlist';
     (window as any).__bgMusicInit = true;
 
     const el = document.getElementById('bg-music');
-    if (!el) return;
+    const btn = document.getElementById('music-toggle');
+    if (!el || !btn) return;
 
     const songs: { title: string; artist: string; src: string }[] =
       JSON.parse(el.dataset.playlist || '[]');
-    if (!songs.length) return;
+    if (!songs.length) { btn.style.display = 'none'; return; }
 
     const audio = document.getElementById('bg-audio') as HTMLAudioElement;
-    let idx = Math.floor(Math.random() * songs.length);
+    let playing = false;
 
-    function playSong() {
-      audio.src = songs[idx].src;
-      audio.volume = 0.3;
-      audio.play().catch(() => {
-        // 浏览器拦截自动播放，等用户交互后重试
-        const resume = () => { audio.play().catch(() => {}); document.removeEventListener('click', resume); document.removeEventListener('keydown', resume); };
-        document.addEventListener('click', resume);
-        document.addEventListener('keydown', resume);
-      });
+    function updateBtn() {
+      btn.textContent = playing ? '🔊' : '🎵';
+      btn.classList.toggle('playing', playing);
     }
 
-    audio.addEventListener('ended', () => {
-      idx = (idx + 1) % songs.length;
-      playSong();
+    function startPlay() {
+      audio.src = songs[0].src;
+      audio.volume = 0.3;
+      audio.play().then(() => {
+        playing = true;
+        updateBtn();
+      }).catch(() => {});
+    }
+
+    btn.addEventListener('click', () => {
+      if (!audio.src || audio.src === location.href) {
+        startPlay();
+        return;
+      }
+      if (playing) {
+        audio.pause();
+        playing = false;
+      } else {
+        audio.play().then(() => { playing = true; updateBtn(); }).catch(() => {});
+      }
+      updateBtn();
     });
 
-    playSong();
+    audio.addEventListener('play', () => { playing = true; updateBtn(); });
+    audio.addEventListener('pause', () => { playing = false; updateBtn(); });
+
+    updateBtn();
   }
 
   initBgMusic();
+  document.addEventListener('astro:page-load', () => { initBgMusic(); });
 </script>
