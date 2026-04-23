@@ -1,7 +1,7 @@
 ---
 title: 从零搭建一个网页爬虫系统
 description: 用 Flask + Playwright + MySQL 搭建动态网页爬虫系统，输入 URL 即可获取 HTML 源码、页面截图和标题信息，部署到阿里云服务器通过浏览器使用。
-pubDate: 2026-04-24
+pubDate: 2026-04-10
 tags: ['Python', 'Flask', 'Playwright', '爬虫', 'MySQL']
 ---
 
