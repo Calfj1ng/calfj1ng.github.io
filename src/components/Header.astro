@@ -12,7 +12,10 @@ const navItems = [
 <header>
   <nav>
     <div class="nav-inner">
-      <a href="/" class="site-title">Calfjing的小世界</a>
+      <a href="/" class="site-brand">
+        <img src="/avatar.jpg" alt="Calfjing" class="site-avatar" width="36" height="36" />
+        <span class="site-title">Calfjing的小世界</span>
+      </a>
       <div class="nav-actions">
         <button id="search-btn" class="search-btn" aria-label="Open search">🔎</button>
         <ul class="nav-links">
@@ -51,11 +54,37 @@ const navItems = [
     height: 4rem;
   }
 
+  .site-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+  }
+
+  .site-brand:hover {
+    text-decoration: none;
+  }
+
+  .site-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid rgba(108, 180, 238, 0.35);
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+  }
+
+  .site-brand:hover .site-avatar {
+    transform: scale(1.06);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(108, 180, 238, 0.35);
+  }
+
   .site-title {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text);
-    text-decoration: none;
   }
 
   .nav-links {
