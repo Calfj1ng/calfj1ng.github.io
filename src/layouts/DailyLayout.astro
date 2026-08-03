@@ -293,7 +293,11 @@ const payloadJson = JSON.stringify(payload).replace(/"/g, '&quot;');
         }
       }
 
-      // astro:page-load 在首次加载和每次 view transition 后都会触发，单独靠它就够。
+      // 模块脚本默认 defer，执行时 DOM 已解析完，可直接初始化。
+      // astro:page-load 监听是为 view transitions 启用时的导航场景准备
+      // （需要 <ClientRouter />；当前用 meta tag 不会触发，但保留兼容）。
+      // 用 gate.dataset.ready 防止重复初始化。
+      initGate();
       document.addEventListener('astro:page-load', initGate);
     </script>
   </body>
