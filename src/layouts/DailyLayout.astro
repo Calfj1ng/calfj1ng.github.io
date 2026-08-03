@@ -1,0 +1,300 @@
+---
+// src/layouts/DailyLayout.astro
+//
+// 「每日学习」栏目的布局。
+// 关键：在构建期把 slot 渲染出的 HTML 用 AES-GCM 加密，
+// 浏览器拿到的是密文 + 一个密码输入框；输对了才解密注入 DOM。
+//
+// 密码来源：环境变量 DAILY_PASSWORD（本地 .env，CI 用 GitHub Actions secret）。
+// 密文本身可以放在 public 仓库里——但源 markdown 也在 public 仓库，
+// 所以本机制只挡「访问 calfj1ng.github.io 的普通访客」，挡不住能读源码的人。
+
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import MusicPlayer from '../components/MusicPlayer.astro';
+import StarfieldBg from '../components/StarfieldBg.astro';
+import BackToTop from '../components/BackToTop.astro';
+import { encryptString } from '../utils/crypto';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = '每日学习', description = '私密内容，需要密码访问' } = Astro.props;
+
+const PASSWORD = import.meta.env.DAILY_PASSWORD;
+if (!PASSWORD) {
+  throw new Error(
+    '[DailyLayout] 缺少环境变量 DAILY_PASSWORD。请在本项目根目录创建 .env 文件并写入 DAILY_PASSWORD=xxx（本地）；CI 上需在 GitHub Actions secrets 中配置同名变量。',
+  );
+}
+
+// 把默认 slot 渲染成 HTML 字符串，然后用密码加密。
+const plainHtml = await Astro.slots.render('default');
+const payload = await encryptString(plainHtml, PASSWORD);
+
+// 转义后塞进 data-* 属性，供客户端脚本读取。
+// JSON.stringify 后再用 HTML attribute 转义，避免双引号破坏属性。
+const payloadJson = JSON.stringify(payload).replace(/"/g, '&quot;');
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <BaseHead title={title} description={description} />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="astro-view-transitions-enabled" content="true" />
+  </head>
+  <body>
+    <StarfieldBg />
+    <Header />
+    <main transition:animate="fade">
+      <div
+        class="daily-gate"
+        id="daily-gate"
+        data-payload={payloadJson}
+      >
+        <div class="gate-form" id="gate-form">
+          <div class="lock-icon" aria-hidden="true">🔒</div>
+          <h1 class="gate-title">每日学习</h1>
+          <p class="hint">这部分内容是加密的，请输入密码查看。</p>
+          <form id="pwd-form" autocomplete="off">
+            <input
+              type="password"
+              id="pwd-input"
+              class="pwd-input"
+              placeholder="密码"
+              autocomplete="current-password"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              aria-label="访问密码"
+            />
+            <button type="submit" class="unlock-btn">解锁</button>
+          </form>
+          <p class="error" id="gate-error" role="alert" hidden>密码错误，请重试</p>
+        </div>
+        <div class="gate-content" id="gate-content" hidden></div>
+      </div>
+    </main>
+    <Footer />
+    <MusicPlayer />
+    <BackToTop />
+
+    <style>
+      .daily-gate {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 2rem 1rem 4rem;
+        min-height: 50vh;
+      }
+
+      .gate-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-top: 2rem;
+      }
+
+      .lock-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        filter: drop-shadow(0 0 12px rgba(108, 180, 238, 0.4));
+      }
+
+      .gate-title {
+        font-size: 1.75rem;
+        margin: 0 0 0.5rem;
+        background: linear-gradient(135deg, #6cb4ee, #4a9eff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hint {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0 0 1.5rem;
+      }
+
+      #pwd-form {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 24rem;
+      }
+
+      .pwd-input {
+        flex: 1;
+        padding: 0.65rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .pwd-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(108, 180, 238, 0.18);
+      }
+
+      .unlock-btn {
+        padding: 0.65rem 1.5rem;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.1s;
+      }
+
+      .unlock-btn:hover {
+        opacity: 0.92;
+      }
+
+      .unlock-btn:active {
+        transform: translateY(1px);
+      }
+
+      .error {
+        margin: 1rem 0 0;
+        color: #ff6b6b;
+        font-size: 0.9rem;
+      }
+
+      .gate-content {
+        line-height: 1.8;
+      }
+
+      .gate-content :global(h1) {
+        font-size: 2.25rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .gate-content :global(h2) {
+        margin-top: 2.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .gate-content :global(ul),
+      .gate-content :global(ol) {
+        padding-left: 1.5rem;
+      }
+
+      .gate-content :global(li) {
+        margin-bottom: 0.4rem;
+      }
+
+      .gate-content :global(pre) {
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+
+      .gate-content :global(.back-link) {
+        display: inline-block;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 600px) {
+        #pwd-form {
+          flex-direction: column;
+        }
+        .unlock-btn {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <script>
+      // 客户端解密逻辑。在 view transition 后会通过 astro:page-load 重新绑定。
+      // 会话内缓存密码，避免每次跳转都重新输入（关闭标签页即清空）。
+      import { decryptString } from '../utils/crypto';
+
+      const SESSION_KEY = 'daily-pwd-v1';
+
+      function initGate() {
+        const gate = document.getElementById('daily-gate');
+        if (!gate || gate.dataset.ready === '1') return;
+        gate.dataset.ready = '1';
+
+        const form = document.getElementById('pwd-form') as HTMLFormElement | null;
+        const input = document.getElementById('pwd-input') as HTMLInputElement | null;
+        const errorEl = document.getElementById('gate-error');
+        const formWrap = document.getElementById('gate-form');
+        const contentEl = document.getElementById('gate-content');
+        if (!form || !input || !formWrap || !contentEl) return;
+
+        // 浏览器 getAttribute 已经把 HTML 实体解码过一次，
+        // 这里只需要再处理我们手动二次编码的 &quot;。
+        let payload: { c: string; s: string; i: string; n: number } | null = null;
+        try {
+          const raw = gate.getAttribute('data-payload') || '';
+          payload = JSON.parse(raw.replace(/&quot;/g, '"'));
+        } catch {
+          if (errorEl) {
+            errorEl.textContent = '密文数据损坏';
+            errorEl.hidden = false;
+          }
+          return;
+        }
+        if (!payload) return;
+
+        async function tryUnlock(password: string): Promise<boolean> {
+          try {
+            const html = await decryptString(payload!, password);
+            contentEl.innerHTML = html;
+            contentEl.hidden = false;
+            formWrap.hidden = true;
+            sessionStorage.setItem(SESSION_KEY, password);
+            return true;
+          } catch {
+            return false;
+          }
+        }
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (errorEl) errorEl.hidden = true;
+          const ok = await tryUnlock(input.value);
+          if (!ok) {
+            if (errorEl) errorEl.hidden = false;
+            input.value = '';
+            input.focus();
+          }
+        });
+
+        // 会话内已解锁过：自动恢复（关闭标签页/浏览器后失效）。
+        const cached = sessionStorage.getItem(SESSION_KEY);
+        if (cached) {
+          tryUnlock(cached);
+        } else {
+          input.focus();
+        }
+      }
+
+      // astro:page-load 在首次加载和每次 view transition 后都会触发，单独靠它就够。
+      document.addEventListener('astro:page-load', initGate);
+    </script>
+  </body>
+</html>

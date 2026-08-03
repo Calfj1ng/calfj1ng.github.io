@@ -1,0 +1,114 @@
+---
+// src/pages/daily/index.astro
+// 「每日学习」列表页。整个列表内容会被 DailyLayout 加密。
+import { getCollection } from 'astro:content';
+import DailyLayout from '../../layouts/DailyLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+const posts = (await getCollection('daily')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<DailyLayout title="每日学习 | Calfjing的小世界" description="每日学习记录">
+  <section class="daily-list">
+    <h1>每日学习</h1>
+    <p class="subtitle">学习记录与笔记 · 共 {posts.length} 篇</p>
+
+    {posts.length === 0 ? (
+      <p class="empty">还没有内容。在 <code>src/content/daily/</code> 里添加 markdown 文件即可。</p>
+    ) : (
+      <div class="posts">
+        {posts.map((post) => (
+          <article class="post-card">
+            <a href={`/daily/${post.id}/`}>
+              <h2>{post.data.title}</h2>
+            </a>
+            <div class="meta">
+              <FormattedDate date={post.data.pubDate} />
+              {post.data.tags && (
+                <div class="tags">
+                  {post.data.tags.map((tag: string) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </section>
+</DailyLayout>
+
+<style>
+  .daily-list h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .empty {
+    color: var(--text-muted);
+    padding: 2rem 0;
+  }
+
+  .posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .post-card:hover {
+    box-shadow: 0 4px 20px rgba(108, 180, 238, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .post-card h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .post-card a {
+    color: var(--text);
+  }
+
+  .post-card a:hover {
+    text-decoration: none;
+    color: var(--accent);
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tag {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 0.15em 0.6em;
+    border-radius: 999px;
+    font-size: 0.8rem;
+  }
+</style>

@@ -32,6 +32,11 @@ jobs:
 
       - name: Build site
         run: npm run build
+        env:
+          # 「每日学习」栏目的加密密码。
+          # 在仓库 Settings → Secrets and variables → Actions 添加 DAILY_PASSWORD。
+          # 首次部署前必须配置，否则构建会因缺少密码而失败。
+          DAILY_PASSWORD: ${{ secrets.DAILY_PASSWORD }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
