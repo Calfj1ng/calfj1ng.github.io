@@ -1,6 +1,5 @@
 ---
 title: "中间件安全：Apache、Tomcat、Nginx、IIS"
-description: "中间件漏洞来自版本 CVE、默认配置、管理后台暴露、危险方法、特殊协议、解析差异。"
 pubDate: 2026-08-04
 tags:
   - 安全
