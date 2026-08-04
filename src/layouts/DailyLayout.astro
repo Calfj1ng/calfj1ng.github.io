@@ -87,6 +87,11 @@ const payloadJson = JSON.stringify(payload).replace(/"/g, '&quot;');
     <BackToTop />
 
     <style>
+      /* 兜底：确保 hidden 属性生效，不被下面的 display:flex 覆盖 */
+      [hidden] {
+        display: none !important;
+      }
+
       .daily-gate {
         max-width: 48rem;
         margin: 0 auto;
