@@ -1,0 +1,277 @@
+---
+// src/components/WelcomeSplash.astro
+//
+// 全屏欢迎遮罩：进入博客时显示一次（sessionStorage 控制）。
+// - 标题打字机效果
+// - 副标题淡入
+// - 三个 CSS 漂浮光斑作粒子
+// - 3 秒后自动淡出，或点击/按任意键立即跳过
+// - 遵守 prefers-reduced-motion
+//
+// 自包含：HTML + scoped CSS + inline TS，不依赖任何外部库。
+
+const SESSION_KEY = 'welcome-shown-v1';
+
+// 在 frontmatter 里读 sessionStorage 不行（SSR 时不存在），
+// 真正的判断放在客户端 script 里：如果已显示过，立刻 hide。
+// 这里只决定要不要渲染 DOM。为了避免 SSR 闪烁，
+// 我们总是渲染，由 script 第一时间决定显隐。
+---
+
+<div id="welcome-splash" class="splash" aria-hidden="true">
+  <!-- CSS-only 漂浮光斑（mix-blend-mode: screen 让它们在暗底上叠加发光） -->
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+
+  <div class="splash-content">
+    <h1 class="splash-title" data-fulltext="Calfjing的小世界">
+      <span class="typed"></span><span class="caret" aria-hidden="true"></span>
+    </h1>
+    <p class="splash-tagline">记录想法 · 分享知识</p>
+    <p class="splash-hint">按任意键或点击进入</p>
+  </div>
+</div>
+
+<style>
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 半透明深色，让背后的 event-horizon shader 微微透出来 */
+    background: rgba(10, 14, 26, 0.88);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    /* 默认可见。准备淡出时加 .hiding 类 */
+    opacity: 1;
+    transition: opacity 0.6s ease-out;
+    overflow: hidden;
+  }
+
+  .splash.hiding {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .splash.hidden {
+    display: none;
+  }
+
+  /* —— 漂浮光斑 —— */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    mix-blend-mode: screen;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .orb-1 {
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(108, 180, 238, 0.55) 0%, transparent 70%);
+    top: -80px;
+    left: -80px;
+    animation: orb-drift-1 14s ease-in-out infinite;
+  }
+
+  .orb-2 {
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(74, 158, 255, 0.4) 0%, transparent 70%);
+    bottom: -60px;
+    right: -60px;
+    animation: orb-drift-2 18s ease-in-out infinite;
+  }
+
+  .orb-3 {
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba(160, 212, 240, 0.3) 0%, transparent 70%);
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: orb-drift-3 11s ease-in-out infinite;
+  }
+
+  @keyframes orb-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(120px, 80px) scale(1.15); }
+  }
+
+  @keyframes orb-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-100px, -60px) scale(1.1); }
+  }
+
+  @keyframes orb-drift-3 {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(calc(-50% + 60px), calc(-50% - 40px)) scale(0.85); }
+  }
+
+  /* —— 内容栈 —— */
+  .splash-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 90vw;
+  }
+
+  .splash-title {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    margin: 0 0 1.25rem;
+    letter-spacing: 0.02em;
+    min-height: 1.2em; /* 避免打字过程中布局抖动 */
+    /* 与主页 h1 一致的渐变文字 */
+    background: linear-gradient(135deg, #6cb4ee, #4a9eff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 4px;
+    background: var(--accent, #6cb4ee);
+    vertical-align: text-bottom;
+    animation: caret-blink 1s steps(2) infinite;
+    /* 渐变文字的父元素会让 caret 也变透明，强制用主色 */
+    -webkit-text-fill-color: var(--accent, #6cb4ee);
+  }
+
+  .caret.stopped {
+    animation: none;
+    opacity: 0;
+  }
+
+  @keyframes caret-blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
+
+  .splash-tagline {
+    color: var(--text-muted, #8899b0);
+    font-size: 1.05rem;
+    margin: 0 0 2rem;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .splash-tagline.shown {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .splash-hint {
+    color: var(--text-muted, #8899b0);
+    font-size: 0.85rem;
+    margin: 0;
+    opacity: 0.6;
+    animation: hint-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes hint-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.75; }
+  }
+
+  /* —— reduced motion —— */
+  @media (prefers-reduced-motion: reduce) {
+    .orb { animation: none !important; }
+    .caret { animation: none !important; opacity: 0; }
+    .splash-tagline {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .splash-hint { animation: none !important; }
+    .splash { transition: opacity 0.3s ease-out; }
+  }
+</style>
+
+<script>
+  const SESSION_KEY = 'welcome-shown-v1';
+  const TYPE_INTERVAL_MS = 80;
+  const AUTO_DISMISS_MS = 3000;
+  const REDUCED_AUTO_DISMISS_MS = 800;
+
+  function initSplash() {
+    const splash = document.getElementById('welcome-splash');
+    if (!splash) return;
+
+    // 已显示过：完全不参与 DOM
+    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+      splash.remove();
+      return;
+    }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const titleEl = splash.querySelector<HTMLSpanElement>('.typed');
+    const caretEl = splash.querySelector<HTMLSpanElement>('.caret');
+    const taglineEl = splash.querySelector<HTMLParagraphElement>('.splash-tagline');
+    if (!titleEl || !caretEl || !taglineEl) return;
+
+    const fullText = titleEl.parentElement?.getAttribute('data-fulltext') ?? '';
+    let dismissed = false;
+
+    function dismiss() {
+      if (dismissed) return;
+      dismissed = true;
+      sessionStorage.setItem(SESSION_KEY, '1');
+      splash.classList.add('hiding');
+      window.setTimeout(() => {
+        splash.classList.add('hidden');
+        splash.remove();
+      }, 600);
+    }
+
+    // 跳过：点击 / 键盘 / 触摸
+    function skipHandler() {
+      dismiss();
+      document.removeEventListener('keydown', skipHandler);
+      splash.removeEventListener('click', skipHandler);
+    }
+    document.addEventListener('keydown', skipHandler, { once: true });
+    splash.addEventListener('click', skipHandler, { once: true });
+
+    if (prefersReduced) {
+      // 直接显示完整文本，缩短停留
+      titleEl.textContent = fullText;
+      taglineEl.classList.add('shown');
+      window.setTimeout(dismiss, REDUCED_AUTO_DISMISS_MS);
+      return;
+    }
+
+    // 打字机
+    let i = 0;
+    const typeTimer = window.setInterval(() => {
+      i++;
+      titleEl.textContent = fullText.slice(0, i);
+      if (i >= fullText.length) {
+        window.clearInterval(typeTimer);
+        // 字打完，光标闪几下后消失，副标题淡入
+        window.setTimeout(() => caretEl.classList.add('stopped'), 600);
+        taglineEl.classList.add('shown');
+      }
+    }, TYPE_INTERVAL_MS);
+
+    // 自动淡出
+    const autoTimer = window.setTimeout(dismiss, AUTO_DISMISS_MS);
+
+    // 如果用户手动跳过了，清掉自动 timer（虽然 dismiss 有 guard，清掉更干净）
+    splash.addEventListener('click', () => window.clearTimeout(autoTimer), { once: true });
+  }
+
+  // 模块脚本默认 defer，DOM 已就绪。但保守起见检查 readyState。
+  initSplash();
+</script>

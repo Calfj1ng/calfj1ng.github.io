@@ -15,6 +15,7 @@ import Footer from '../components/Footer.astro';
 import MusicPlayer from '../components/MusicPlayer.astro';
 import StarfieldBg from '../components/StarfieldBg.astro';
 import BackToTop from '../components/BackToTop.astro';
+import WelcomeSplash from '../components/WelcomeSplash.astro';
 import { encryptString } from '../utils/crypto';
 import '../styles/global.css';
 
@@ -49,6 +50,7 @@ const payloadJson = JSON.stringify(payload).replace(/"/g, '&quot;');
     <meta name="astro-view-transitions-enabled" content="true" />
   </head>
   <body>
+    <WelcomeSplash />
     <StarfieldBg />
     <Header />
     <main transition:animate="fade">
