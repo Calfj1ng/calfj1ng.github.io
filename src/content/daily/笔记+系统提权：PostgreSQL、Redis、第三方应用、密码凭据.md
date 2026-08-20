@@ -20,7 +20,7 @@ tags:
 
 ## PostgreSQL 提权
 
-条件：知道账密。可打的是 CVE-2019-9193（COPY FROM PROGRAM 特性滥用），9.3~11 版本普通用户即可，12+ 要超级用户。UDF 和 libc 老路线基本废了
+条件：知道账密。可打的是 CVE-2019-9193（COPY FROM PROGRAM 特性滥用）
 
 Navicat 连上后命令列界面执行（以执行 id 为例）：
 
@@ -60,7 +60,7 @@ SELECT * FROM cmd_exec;
 - **TeamViewer**：插件直接读登录凭证，拿 ID+密码客户端直连
 - **Navicat**：插件抠出保存的数据库连接账密（Web 权限拿不到，要计算机用户权限）
 - **浏览器密码**：要对方高权限用户（低权限建目录跑不了工具），提取 Edge 等保存的密码再去登对应网站
-- **WinRAR CVE-2023-38831**：用 python 脚本把 bat 和正常 pdf 打包成恶意 rar，目标双击就执行 bat 里的 cs.exe 上线。2023 年的洞但破解版没人升级，碰到概率还在
+- **WinRAR CVE-2023-38831**：用 python 脚本把 bat 和正常 pdf 打包成恶意 rar，目标双击就执行 bat 里的 cs.exe 上线
 
 ## 要点
 
