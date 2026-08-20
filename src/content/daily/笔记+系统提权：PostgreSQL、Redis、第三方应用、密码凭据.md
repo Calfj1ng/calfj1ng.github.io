@@ -137,4 +137,5 @@ RARLAB WinRAR 代码执行漏洞，原理卷名欺骗：压缩包里塞"同名�
 
 ## 要点
 
-数据库这条线记口诀：PostgreSQL 有账密就打 CVE-2019-9193，Redis 未授权优先写计划任务，Memcached 无认证只能翻敏感信息赌。第三方软件这是拿主机后的第一件事——tasklist 看装了啥：远控抠 TeamViewer 凭证、密码类抠 Navicat/浏览器、文档类上 WinRAR 钓鱼包等管理员点 前提都是先有计算机用户权限
+PostgreSQL这条线就是 拿到账密后，利用 copy from program直接执行系统命令
+。Redis 这条线就是拿到未授权后 改保存配置往系统里写文件，Memcached 翻敏感数据。主机侧再提取 TeamViewer、Navicat、浏览器凭据或者是用 WinRAR 钓鱼包
